@@ -62,21 +62,56 @@ void setup(){
   udp.listen(true);
 }
 
+
+// 前回の状態を保持してエッジ検出する
+int prevX = 32767;
+int prevY = 32767;
+int prevBtn = 0;
+
 void receive(byte[] data, String ip, int port) {
   String msg = new String(data);
-  String[] parts = split(msg, ',');
-  if (parts.length == 3) {
-    int axisX = int(parts[0]);
-    int axisY = int(parts[1]);
-    int swVal = int(parts[2]);
+  String[] vals = split(msg, ',');
+  if (vals.length < 5) return;
 
-    left = (axisX < 30000);
-    right = (axisX > 35000);
-    up = (axisY < 30000);
-    down = (axisY > 35000);
-    button = (swVal == 1);
+  int axisX = int(vals[0]);
+  int axisY = int(vals[1]);
+  int btn   = int(vals[2]);
+  int sw1   = int(vals[3]);
+  int sw2   = int(vals[4]);
+
+  // --- ジョイスティックしきい値 ---
+  int centerMin = 24000;
+  int centerMax = 41000;
+
+  // 左
+  if (axisX < centerMin && prevX >= centerMin) {
+    onLeft();
   }
+  // 右
+  if (axisX > centerMax && prevX <= centerMax) {
+    onRight();
+  }
+  // 上
+  if (axisY < centerMin && prevY >= centerMin) {
+    onUp();
+  }
+  // 下
+  if (axisY > centerMax && prevY <= centerMax) {
+    onDown();
+  }
+
+  // --- ボタン処理 ---
+  int anyBtn = (btn == 1 || sw1 == 1 || sw2 == 1) ? 1 : 0;
+  if (anyBtn == 1 && prevBtn == 0) {
+    onA();
+  }
+
+  // 状態更新
+  prevX = axisX;
+  prevY = axisY;
+  prevBtn = anyBtn;
 }
+
 
 void draw(){
   background(10);
